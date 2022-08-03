@@ -8,7 +8,7 @@ def generateSymmetricPosetInequalities(m,b): # generates those inequalities whic
       copy.append([-1*k for k in i])
   return copy
 
-def MaxSymmetricPoset(m,b): #returns the cover_relations in the form necessary for the FinitePoset constructor
+def maximalSymmetricPoset(m,b): #returns the cover_relations in the form necessary for the FinitePoset constructor
   Relations = []
   for i in range(m-1):
     if i + 1 != b:
@@ -25,7 +25,7 @@ def dimensionData(m):
     Poly = generateSymmetricFace(m,b)
     print("Q " + str(m) + "," + str(b) + " with dimension " + str(Poly.dimension()) + " and f-vector " + str(Poly.f_vector()))
     
-# inputs a face, outputs those inequalities from the Kunz Inequalities which are satisfied strictly
+# inputs a face, outputs those inequalities from the Kunz Inequalities which are satisfied with equality.
 def facetEqualities(face, m):
   ineqs = KunzPoset.KunzInequalities(m)
   Equalities = []
@@ -74,8 +74,8 @@ def findRaysForSymmetryFaces(m):
   
   # Input: facet of Q_{m, _} (though can be generalized to any face of C_m) and outputs a dictionary with key: height, value: # of elements in the corresponding Kunz Poset with that height 
   # here height is length of maximal chain from 0 to element
-  def PosetElementDepth(facet, m, showposet = False): # essentially a topological search - definitely not optimal but it doesn't really matter
-    KunzP = returnKunzPoset(facet.as_polyhedron(), m)
+  def PosetElementDepth(face, m, showposet = False): # essentially a topological search - definitely not optimal but it doesn't really matter
+    KunzP = returnKunzPoset(face.as_polyhedron(), m)
     if showposet:
         KunzP.poset.show()
     Cover_Rel = KunzP.cover_relations
@@ -109,7 +109,7 @@ def findRaysForSymmetryFaces(m):
         currentDepth+=1
     return DepthArray
 
-  # the purpose of the following function is to classify the different types of Kunz Posets obtained from the corresopnding facets of Q_{m, _}
+  # the purpose of the following function is to classify the different types of Kunz Posets obtained from the corresponding facets of Q_{m, _}
   def GetTuple(facet, m): 
     DepthArray = PosetElementDepth(facet, m)
     maxDepth = np.argmax(DepthArray) # this is of course the thing at the top, I don't want to count that
