@@ -74,7 +74,7 @@ def findRaysForSymmetryFaces(m):
   
   # Input: facet of Q_{m, _} (though can be generalized to any face of C_m) and outputs a dictionary with key: height, value: # of elements in the corresponding Kunz Poset with that height 
   # here height is length of maximal chain from 0 to element
-  def PosetElementDepth(face, m, showposet = False): # essentially a topological search - definitely not optimal but it doesn't really matter
+  def posetElementDepth(face, m, showposet = False): # essentially a topological search - definitely not optimal but it doesn't really matter
     KunzP = returnKunzPoset(face.as_polyhedron(), m)
     if showposet:
         KunzP.poset.show()
@@ -110,7 +110,7 @@ def findRaysForSymmetryFaces(m):
     return DepthArray
 
   # the purpose of the following function is to classify the different types of Kunz Posets obtained from the corresponding facets of Q_{m, _}
-  def GetTuple(facet, m): 
+  def getTuple(facet, m): 
     DepthArray = PosetElementDepth(facet, m)
     maxDepth = np.argmax(DepthArray) # this is of course the thing at the top, I don't want to count that
     Array = []
@@ -137,12 +137,12 @@ def findRaysForSymmetryFaces(m):
     return [Dict[x] for x in ValidDepths]
 
 # applies the previous function for each facet of Q_{m,b}
-def GetTuples(m,b):
+def getTuples(m,b):
     for facet in generateSymmetryFace(m,b).facets():
         GetTuple(facet, m)
 
 # Easier to read classification of the facet-types of Q_{m,b}. Here a 1-1 boosted element refers to the triple (b/4, b/4, b/2)
-def GetTypesOfTuples(m,b, printer = False):
+def getTypesOfTuples(m,b, printer = False):
     Array = [GetTuple(facet, m) for facet in generateSymmetryFace(m,b).facets()]
     Types = {
         1: [],
