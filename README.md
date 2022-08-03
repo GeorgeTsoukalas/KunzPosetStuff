@@ -1,3 +1,8 @@
 # KunzPosetStuff
 
-A repository of some functions written during the Summer 2022 Pure Math REU at SDSU. Mostly intended for future use at the program. 
+A repository of functions written by the ALGAE group during the Summer 2022 Pure Math REU at SDSU. Mostly intended for future use at the program.
+
+Dependencies:
+------------
+1. NumericalSemigroup.sage (can be found at this link: https://github.com/coneill-math/numsgps-sage)
+2. KunzPoset.sage (can be found at this link: https://github.com/coneill-math/kunzpolyhedron)
