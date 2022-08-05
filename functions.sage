@@ -2,7 +2,7 @@ import numpy as np
 
 #contributions by Anastasia, Chris, George
 
-#inputs a POSET, outputs a boolean
+#inputs a POSET, outputs a boolean (tells you if there is a numerical semigroup whose poset is that Kunz Poset)
 def hasNumericalSemigroups(P):
     mpvecs = [[a-b for (a,b) in zip(rel[0], rel[1])] for rel in P.MinimalPresentation()]
     if len(mpvecs) == 0:
