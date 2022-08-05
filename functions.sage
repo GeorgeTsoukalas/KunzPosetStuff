@@ -1,6 +1,19 @@
 import numpy as np
 
-def generateSymmetricPosetInequalities(m,b): # generates those inequalities which Q_{m,b} satisfies
+#chris wrote
+#inputs a POSET, outputs a boolean
+def hasNumericalSemigroups(P):
+    mpvecs = [[a-b for (a,b) in zip(rel[0], rel[1])] for rel in P.MinimalPresentation()]
+    if len(mpvecs) == 0:
+        return True
+    
+    T = ToricLattice(len(mpvecs[0]))
+    L = T.submodule(mpvecs)
+    
+    return all(sum([a*b for (a,b) in zip(P.atoms, v)]) % P.m == 0 for v in L.saturation().basis())
+
+# generates those inequalities which Q_{m,b} satisfies
+def generateSymmetricPosetInequalities(m,b):
   ineqs = KunzPoset.KunzInequalities(m)
   copy = KunzPoset.KunzInequalities(m)
   for i in inequalities:
@@ -8,7 +21,8 @@ def generateSymmetricPosetInequalities(m,b): # generates those inequalities whic
       copy.append([-1*k for k in i])
   return copy
 
-def maximalSymmetricPoset(m,b): #returns the cover_relations in the form necessary for the FinitePoset constructor
+#returns the cover_relations in the form necessary for the FinitePoset constructor
+def maximalSymmetricPoset(m,b):
   Relations = []
   for i in range(m-1):
     if i + 1 != b:
@@ -16,7 +30,8 @@ def maximalSymmetricPoset(m,b): #returns the cover_relations in the form necessa
       Relations.append((i+1, b))
   return (range(m-1), Relations)
 
-def generateSymmetricFace(m,b): #generates Q_{m,b} as a polyhedron object
+#generates Q_{m,b} as a polyhedron object
+def generateSymmetricFace(m,b):
   return Polyhedron(ieqs = generateSymmetricPosetInequalities(m,b))
 
 # inputs m, prints the dimension, f-vector for each Q_{m,b} which b in the range [1, m-1]
