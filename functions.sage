@@ -1,6 +1,7 @@
 import numpy as np
 
-#chris wrote
+#contributions by Anastasia, Chris, George
+
 #inputs a POSET, outputs a boolean
 def hasNumericalSemigroups(P):
     mpvecs = [[a-b for (a,b) in zip(rel[0], rel[1])] for rel in P.MinimalPresentation()]
