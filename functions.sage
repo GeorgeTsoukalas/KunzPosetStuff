@@ -167,3 +167,205 @@ def getTypesOfTuples(m,b, printer = False):
         print("Num Facets with 3 boosted elements: "+ str(len(Types[3])))
         print("Num Facets with OTHER boosted element: "+ str(len(Types["Other"])))
     return (len(Types[1]), len(Types[2]), len(Types["2B"]), len(Types[3]), len(Types["Other"]))
+  
+#chris wrote
+#inputs a POSET, outputs a boolean
+def hasNumericalSemigroups(P):
+    mpvecs = [[a-b for (a,b) in zip(rel[0], rel[1])] for rel in P.MinimalPresentation()]
+    if len(mpvecs) == 0:
+        return True
+    
+    T = ToricLattice(len(mpvecs[0]))
+    L = T.submodule(mpvecs)
+    
+    return all(sum([a*b for (a,b) in zip(P.atoms, v)]) % P.m == 0 for v in L.saturation().basis())
+
+ #input m, b, return the qmbPolyhedron
+#starts with the big list of all inequalities for the kunz cone
+#and uses gSPI to make the Qmb inequalities
+#pretty sure we can just return qmb
+#if shit breaks uncomment the code
+#but it just seems redundant
+def qmbPolyhedron(m, b):
+    bigList=KunzPoset.KunzInequalities(m)
+    smallList = generateSymmetricPosetInequalities(m, b)
+    qmb = Polyhedron(ieqs = bigList, eqns = smallList)
+    return qmb
+  
+#input m, b, prints posets of the facets of that qmb
+#builds the qmb, grabs the facets, and grabs the equalities of the qmb
+#now goes thorugh each facet, builds its poset
+#also goes through and finds the extra equalities that this facet satisfies
+def qmbFacetPosets(m,b):
+    poly = qmbPolyhedron(m, b)
+    facetList = poly.facets()
+    equalitiesList = facetEqualities(m, poly)
+    for facet in facetList:
+        eqList = facetEqualities(m, facet.as_polyhedron())
+        kPoset = KunzPoset(m, hyperplane_desc = eqList)
+        #print(facet.as_polyhedron().dimension())
+        for eq in eqList:
+            if eq not in equalitiesList:
+                print(oneEqtoVal(eq))
+        kPoset.poset.show()
+        
+#input m, b, output a list of lists
+#the triples allow duplicates, but do not allow the case where 3|b & 3|m and each 3x=3y=3z=b
+def findTriples(m, b):
+    lst = []
+    thirdSet = set()
+    halfSet = set()
+    if b % 2 == 0:
+        halfSet.add((b)/2)
+    if m % 2 == b % 2:
+            halfSet.add((m+b)/2)
+    divByThree = b % 3 == 0 and m % 3 == 0
+    if divByThree:
+        thirdSet = {b/3, (m+b)/3, (2*m+b)/3}
+    for x in [1..m-1]:
+        if x !=b: #don't count b
+            for y in [x..m-1]:
+                if(y != b): #don't count b
+                    for z in [y..m-1]:
+                        if(z != b and (x+y+z)%m == b): # don't count b and check if they sum to b
+                            if  not (x != y and x in thirdSet and y in thirdSet and y in thirdSet): #check if they're the bad kind of triple
+                                #now we need to check if one of them is half of b and if the other two are equal
+                                if not ((x in halfSet and y != z) or (y in halfSet and x != z) or(z in halfSet and x!=y)):
+                                    lst.append([x, y, z])
+    return lst
+ 
+#input m, b, output int[][][]
+#first finds triples, then for each triple, calls tTE which sends a list of lists with the three equations
+#for those three numbers. each of those list[][] get put into one big list and returned
+def findTriplesDiffFormat(m,b):
+    lst = findTriples(m,b)
+    biggest = []
+    for triple in lst:
+        biggest.append(tripleToEqs(m, triple))
+    return biggest
+  
+#input m, 1-d list, output list[][]
+#given the m and a list of three integers, makes the equations in the format that kunzposets and polyhedrons need
+#makes it into a tuple so i can have the given length already
+#then adds in the x and y and also the sum
+def tripleToEqs(m, lst):
+    rtn = []
+    for x in [0..2]:
+        for y in [x+1..2]:
+            tup = (0,)*m
+            tup = list(tup)
+            tup[lst[x]] = 1
+            tup[lst[y]] = 1
+            tup[((lst[x] + lst[y])%m)] = -1
+            rtn.append(tup)
+    return rtn
+  
+#input a 2-d list of equations, outputs a list of the values added
+#uses a dictionary to keep track of values, then sees how many times
+#we need to add to the list
+def eqsToVals(listOfLists):
+    vals = {}
+    for baby in listOfLists:
+        currVals = oneEqtoVal(baby)
+        for k,v in currVals.items():
+            if k not in vals or v > 1:
+                vals[k] = v
+    rtn = []
+    for k, v in vals.items():
+        if v == 2:
+            rtn.append(k)
+        if len(vals.keys()) == 1:
+            rtn.append(k)
+        rtn.append(k)
+                
+                
+    return rtn
+
+#input a list of one equation, returns the value(s) that are added in the eq
+#inner method of eqToVals
+def oneEqtoVal(lst):
+    vals = {}
+    for i in range(len(lst)):
+            if(lst[i] == 1):
+                vals[i+1] = 1
+            if lst[i] == 2:
+                vals[i+1]=2
+    return vals
+  
+#input m, b, output a list of lists, where each inner list is a triple
+#representing that facet
+#done by building qmb, grabbing facets, then for each facet, finding each
+#new equation and finding its values
+def facetVals(m, b):
+    poly = qmbPolyhedron(m, b)
+    facetList = poly.facets()
+    qmbEqs = facetEqualities(m, poly)
+    rtn = []
+    for facet in facetList:
+        facetEqualities = facetEqualities(m, facet.as_polyhedron())
+        smallerList = []
+        for eq in facetEqualities:
+            if eq not in qmbEqs:
+                smallerList.append(eq)
+        vals = eqsToVals(smallerList)
+        rtn.append(vals)
+    return rtn
+  
+#input m, output if the facets of all Qmbs with that m have faces
+#prints, not returns, uses Chris's semigroups method
+def doFacetsHaveSGs(m):
+    for b in [1..m-1]:
+        poly = qmbPolyhedron(m, b)
+        facetList = poly.facets()
+        print("The following facets are from Q %d %d" %(m, b))
+        for facet in facetList:
+            eqList = facetEqualities(m, facet.as_polyhedron())
+            kPoset = KunzPoset(m, hyperplane_desc = eqList)
+            answer = hasNumericalSemigroups(kPoset)
+            print("does this facet have a semigroup?", answer)
+            
+#input m, b, bPrime, return a list of rays
+#makes both polyhedrons, takes the intersection, and grabs the rays of that face
+def intersectionRays(m, b, bPrime):
+    qmb = qmbPolyhedron(m, b)
+    qmbPrime = qmbPolyhedron(m, bPrime)
+    qInter = qmb.intersection(qmbPrime)
+    return qInter.rays()
+  
+#input a list of rays, output the list of coordinates that are zero
+# throughout all rays, (the subgroup)
+def intersectionZeroes(rays):
+    listZeroes = []
+    if len(rays) == 0:
+        return "No intersection"
+    for i in range(0, len(rays[0])):
+        sum = 0
+        for j in range(0, len(rays)):
+            sum += rays[j][i]
+        if sum == 0:
+            listZeroes.append(i+1)
+    return listZeroes
+  
+#input m, b, bPrime, prints the poset of that intersection
+#we use intersectionRays and intersectionZeroes to 
+def intersectionPoset(m, b, bPrime):
+    rays = intersectionRays(m, b, bPrime)
+    newrays = []
+    firstZero = intersectionZeroes(rays)[0]
+    if len(rays) != 0:
+        
+        for ray in rays:
+            newrays.append(ray[0:firstZero-1])
+        newM = len(newrays[0]) + 1
+        kunzIneqs = KunzPoset.KunzInequalities(newM)
+        newEqualities = []
+        for i in range(0, len(kunzIneqs)):
+            sum = 0
+            for j in range(0, len(newrays)):
+                sum += dotProduct(kunzIneqs[i],newrays[j])
+        #print(sum)
+            if sum == 0:
+                newEqualities.append(kunzIneqs[i])
+        newEqualities=[eq[1:] for eq in newEqualities]
+        kPoset = KunzPoset(newM, hyperplane_desc=newEqualities)
+        kPoset.poset.show()
